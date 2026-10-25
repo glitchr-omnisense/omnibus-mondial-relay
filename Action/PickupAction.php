@@ -74,7 +74,7 @@ final class PickupAction implements ActionInterface, ApiAwareInterface
             );
         }
 
-        $request->setResult($points);
+        $request->setResult(\array_slice($points, 0, max(1, $request->limit))); // no more than asked, whatever the service sends
     }
 
     private static function coordinate(string $value): ?float

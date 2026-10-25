@@ -86,7 +86,10 @@ final class Api
         }
 
         $document = @simplexml_load_string($xml);
-        $result = $document?->children('http://schemas.xmlsoap.org/soap/envelope/')->Body->children(self::NS)->{$method.'Response'}->{$method.'Result'};
+        if (false === $document || 'Envelope' !== $document->getName()) {
+            throw new CarrierException('mondial_relay', \sprintf('Unexpected answer to %s: not a SOAP envelope.', $method));
+        }
+        $result = $document->children('http://schemas.xmlsoap.org/soap/envelope/')->Body->children(self::NS)->{$method.'Response'}->{$method.'Result'};
         if (null === $result || !$result->count()) {
             throw new CarrierException('mondial_relay', \sprintf('Unexpected answer to %s.', $method));
         }

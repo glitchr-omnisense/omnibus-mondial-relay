@@ -3,12 +3,12 @@
 namespace Omnibus\MondialRelay;
 
 use Omnibus\Config;
-use Omnibus\Exception\InvalidConfigException;
 use Omnibus\GatewayFactory;
 use Omnibus\MondialRelay\Action\GetSlipAction;
 use Omnibus\MondialRelay\Action\PickupAction;
 use Omnibus\MondialRelay\Action\ShippingAction;
 use Omnibus\MondialRelay\Action\TrackingAction;
+use Symfony\Component\HttpClient\HttpClient;
 
 /**
  *   options:
@@ -37,11 +37,7 @@ final class MondialRelayGatewayFactory extends GatewayFactory
             'collection' => 'CCC',
             'download_labels' => false,
             'omnibus.api' => function (Config $c) {
-                if (!$this->http) {
-                    throw new InvalidConfigException('Mondial Relay needs an HTTP client: new MondialRelayGatewayFactory($httpClient).');
-                }
-
-                return new Api($this->http, (string) $c['enseigne'], (string) $c['private_key'], (string) $c['endpoint']);
+                return new Api($this->http ?? HttpClient::create(), (string) $c['enseigne'], (string) $c['private_key'], (string) $c['endpoint']);
             },
             'omnibus.action.pickup' => new PickupAction(),
             'omnibus.action.shipping' => static fn (Config $c) => new ShippingAction((string) $c['collection'], (bool) $c['download_labels']),

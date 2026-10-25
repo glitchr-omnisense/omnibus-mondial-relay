@@ -8,7 +8,7 @@ use Omnibus\Model\Address;
 use Omnibus\Model\Parcel;
 use Omnibus\Model\TrackingStatus;
 use Omnibus\Request\Cancel;
-use Omnibus\Tests\Fixtures;
+use Omnibus\Testing\Fixtures;
 use Omnibus\MondialRelay\Api;
 use Omnibus\MondialRelay\MondialRelayGatewayFactory;
 use PHPUnit\Framework\TestCase;
