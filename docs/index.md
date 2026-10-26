@@ -1,6 +1,6 @@
 # omnibus/mondial-relay
 
-Mondial Relay for [omniscient/omnibus](https://github.com/glitchr-studio/omnibus): relay points,
+Mondial Relay for [omnisense/omnibus](https://github.com/glitchr-omnisense/omnibus): relay points,
 shipments and their labels, tracking and label reprints, through Mondial Relay's SOAP web services
 (`Web_Services.asmx`). The SOAP envelopes are written and read as XML over plain HTTP: `ext-soap`
 is not needed. The gateway calls:
@@ -23,7 +23,7 @@ works on the live one.
 composer require omnibus/mondial-relay
 ```
 
-Requires PHP 8.2, `omniscient/omnibus` (2.x) and `symfony/http-client` (6.4, 7 or 8). `intl` is
+Requires PHP 8.2, `omnisense/omnibus` (2.x) and `symfony/http-client` (6.4, 7 or 8). `intl` is
 used when present to write addresses without accents (`iconv` otherwise). In a Symfony application
 with `Omnibus\Bridge\Symfony\OmnibusBundle`, the factory is registered as soon as the package is
 installed.
@@ -50,7 +50,7 @@ after the other, in the documented order, followed by the private key, in capita
 | `endpoint` | string | `https://api.mondialrelay.com/Web_Services.asmx` | no | the web services' address |
 | `collection` | string | `CCC` | no | how the parcels leave the shop (`ModeCol`): `CCC` collected at the shop, `REL` dropped at a relay point |
 | `download_labels` | bool | `false` | no | `true`: the label's PDF is downloaded into `Label::$content` (one more `GET`); otherwise only its `url` is given |
-| `rates` | list | - | no | the only way this gateway rates ([the rates option](https://github.com/glitchr-studio/omnibus/blob/2.x/docs/configuration.md#the-rates-option)): Mondial Relay has no rating service |
+| `rates` | list | - | no | the only way this gateway rates ([the rates option](https://github.com/glitchr-omnisense/omnibus/blob/2.x/docs/configuration.md#the-rates-option)): Mondial Relay has no rating service |
 
 Shipment options read when booking (`Shipment::$options`):
 

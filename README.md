@@ -1,13 +1,13 @@
 # omnibus/mondial-relay
 
-Mondial Relay for [omniscient/omnibus](https://github.com/glitchr-studio/omnibus):
+Mondial Relay for [omnisense/omnibus](https://github.com/glitchr-omnisense/omnibus):
 relay points, labels and tracking through its Web_Services.asmx (plain HTTP, no ext-soap needed).
 
 ```php
 $gateway = (new MondialRelayGatewayFactory($http))->create($options);   // $http: the HTTP client to call with (the application's, HttpClient::create() in plain PHP); the options below
 ```
 
-No framework needed: the package requires `omniscient/omnibus` and `symfony/http-client`. In a
+No framework needed: the package requires `omnisense/omnibus` and `symfony/http-client`. In a
 Symfony application, the same through the bundle's configuration:
 
 ```yaml
