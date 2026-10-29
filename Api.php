@@ -3,6 +3,7 @@
 namespace Omnibus\MondialRelay;
 
 use Omnibus\Exception\CarrierException;
+use Omnibus\Http\Redaction;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -82,20 +83,22 @@ final class Api
                 'body' => $envelope,
             ])->getContent();
         } catch (ExceptionInterface $e) {
-            throw new CarrierException('mondial_relay', $e->getMessage(), previous: $e);
+            $secrets = $this->secrets($params['Security']);
+
+            throw Redaction::withoutArguments(new CarrierException('mondial_relay', Redaction::text($e->getMessage(), $secrets), previous: Redaction::copy($e, $secrets)));
         }
 
         $document = @simplexml_load_string($xml);
         if (false === $document || 'Envelope' !== $document->getName()) {
-            throw new CarrierException('mondial_relay', \sprintf('Unexpected answer to %s: not a SOAP envelope.', $method));
+            throw Redaction::withoutArguments(new CarrierException('mondial_relay', \sprintf('Unexpected answer to %s: not a SOAP envelope.', $method)));
         }
         $result = $document->children('http://schemas.xmlsoap.org/soap/envelope/')->Body->children(self::NS)->{$method.'Response'}->{$method.'Result'};
         if (null === $result || !$result->count()) {
-            throw new CarrierException('mondial_relay', \sprintf('Unexpected answer to %s.', $method));
+            throw Redaction::withoutArguments(new CarrierException('mondial_relay', \sprintf('Unexpected answer to %s.', $method)));
         }
         $stat = (string) $result->STAT;
         if (!\in_array($stat, $accept, true)) {
-            throw new CarrierException('mondial_relay', self::ERRORS[$stat] ?? 'STAT '.$stat, $stat);
+            throw Redaction::withoutArguments(new CarrierException('mondial_relay', self::ERRORS[$stat] ?? 'STAT '.$stat, $stat));
         }
 
         return $result;
@@ -107,7 +110,9 @@ final class Api
         try {
             return $this->http->request('GET', $url)->getContent();
         } catch (ExceptionInterface $e) {
-            throw new CarrierException('mondial_relay', $e->getMessage(), previous: $e);
+            $secrets = $this->secrets();
+
+            throw Redaction::withoutArguments(new CarrierException('mondial_relay', Redaction::text($e->getMessage(), $secrets), previous: Redaction::copy($e, $secrets)));
         }
     }
 
@@ -136,5 +141,15 @@ final class Api
     public static function phone(?string $phone): string
     {
         return preg_replace('/(?!^\+)[^0-9]/', '', (string) $phone);
+    }
+
+    /**
+     * What a failure must not carry: the credentials, and what a request made of them.
+     *
+     * @return list<string>
+     */
+    private function secrets(string ...$more): array
+    {
+        return [$this->privateKey, ...$more];
     }
 }
