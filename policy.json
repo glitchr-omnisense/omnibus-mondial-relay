@@ -1,0 +1,38 @@
+{
+    "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
+    "provider": "mondial_relay",
+    "rateLimits": null,
+    "concurrency": null,
+    "rights": {
+        "commercial": "contract",
+        "openSourceRequired": false,
+        "caching": {
+            "permission": "unknown",
+            "maxTtl": null
+        },
+        "storage": "unknown",
+        "redistribution": "unknown",
+        "attribution": {
+            "required": false,
+            "text": null,
+            "url": null,
+            "where": []
+        },
+        "licence": null
+    },
+    "requirements": {
+        "key": true,
+        "userAgent": {
+            "required": false,
+            "pattern": null
+        }
+    },
+    "provenance": {
+        "terms": null,
+        "policy": "https://storage.mondialrelay.fr/Presentation of WebServices V1.2-1.pdf",
+        "verifiedAt": "2026-11-10",
+        "declaredBy": "maintainer",
+        "contact": "https://connect.mondialrelay.com",
+        "notes": "Presentation of WebServices V1.2 (February 2026): no batch calls, requests spread over the day as end users need them; a shipment tracked 4 to 6 times a day at most and no more once delivered or returned (per parcel: no scope of the schema counts it, so not declared); one call per point search, never the whole network, 30 points at most, radius up to 75 km (100 km for 24R/24L). The SOAP shipment creation (WSI2_CreationEtiquette, which this package calls) is \"no longer maintained and should not be used\": labels go through API2 (REST); API2 labels must not be altered or resized. Access with the merchant's enseigne and private key. No idempotency key: a label is created once."
+    }
+}

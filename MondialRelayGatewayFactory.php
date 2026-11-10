@@ -32,12 +32,13 @@ final class MondialRelayGatewayFactory extends GatewayFactory
         $config->defaults([
             'omnibus.factory_name' => 'mondial_relay',
             'omnibus.factory_title' => 'Mondial Relay',
+            'omnibus.policy' => __DIR__.'/policy.json',
             'omnibus.required_options' => ['enseigne', 'private_key'],
             'endpoint' => Api::ENDPOINT,
             'collection' => 'CCC',
             'download_labels' => false,
             'omnibus.api' => function (Config $c) {
-                return new Api($this->http ?? HttpClient::create(), (string) $c['enseigne'], (string) $c['private_key'], (string) $c['endpoint']);
+                return new Api($this->http ?? HttpClient::create(), (string) $c['enseigne'], (string) $c['private_key'], (string) $c['endpoint'], backoff: $c->backoff());
             },
             'omnibus.action.pickup' => new PickupAction(),
             'omnibus.action.shipping' => static fn (Config $c) => new ShippingAction((string) $c['collection'], (bool) $c['download_labels']),

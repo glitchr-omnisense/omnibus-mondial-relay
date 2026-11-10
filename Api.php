@@ -4,6 +4,8 @@ namespace Omnibus\MondialRelay;
 
 use Omnibus\Exception\CarrierException;
 use Omnibus\Http\Redaction;
+use Omnibus\Http\Throttle;
+use Omnisense\Contracts\Policy\Backoff;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -52,6 +54,8 @@ final class Api
         private readonly string $enseigne,
         private readonly string $privateKey,
         private readonly string $endpoint = self::ENDPOINT,
+        /** The waits the carrier asks for (omnisense/contracts' Backoff): no call while one lasts, a 429 a RateLimitedException, never retried */
+        private readonly ?Backoff $backoff = null,
     ) {
     }
 
@@ -78,10 +82,13 @@ final class Api
             .\sprintf('<soap:Body><%1$s xmlns="%2$s">%3$s</%1$s></soap:Body></soap:Envelope>', $method, self::NS, $body);
 
         try {
-            $xml = $this->http->request('POST', $this->endpoint, [
+            Throttle::before($this->backoff);
+            $response = $this->http->request('POST', $this->endpoint, [
                 'headers' => ['Content-Type' => 'text/xml; charset=utf-8', 'SOAPAction' => '"'.self::NS.$method.'"'],
                 'body' => $envelope,
-            ])->getContent();
+            ]);
+            Throttle::after($this->backoff, 'mondial_relay', $response->getStatusCode(), $response->getHeaders(false));
+            $xml = $response->getContent();
         } catch (ExceptionInterface $e) {
             $secrets = $this->secrets($params['Security']);
 

@@ -203,6 +203,10 @@ omnibus:
 The core's Docker harness calls the same gateway from its console:
 `docker compose run --rm omnibus track mondial_relay <number>`.
 
+## Usage policy
+
+`policy.json` (named in `composer.json`'s `extra.omnisense.policy`) leaves the limits unknown: Mondial Relay's Presentation of WebServices (February 2026) asks for no batch calls, a shipment tracked 4 to 6 times a day at most and no more once delivered, and one call per point search (in the notes: no scope counts per parcel). It also says WSI2_CreationEtiquette, which this package calls for labels, is no longer maintained: labels move to API2 (REST). No idempotency key: a label is created once. A 429 is a `RateLimitedException`, never retried, and the carrier's next calls wait for its `Retry-After`, unsent. See omnisense/omnibus' [Usage policies and rate limits](https://github.com/glitchr-omnisense/omnibus/blob/2.x/docs/policies.md).
+
 ## Errors
 
 Every failure is an `Omnibus\Exception\CarrierException` whose `carrier` is `mondial_relay`:
