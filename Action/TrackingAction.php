@@ -11,12 +11,16 @@ use Omnibus\Model\TrackingStatus;
 use Omnibus\Request\Request;
 use Omnibus\Request\Tracking;
 use Omnibus\MondialRelay\Api;
+use Omnisense\Contracts\Policy\PolicyGuard;
 
 /**
  * WSI2_TracingColisDetaille (API1, still the maintained tracking service:
  * Presentation of WebServices V-1.2, February 2026). Mondial Relay asks that a
  * shipment be tracked 4 to 6 times a day at most, and no more once delivered
- * or returned: the caller's to keep (no limiter counts per parcel). Its STAT is the parcel's status - 80 registered,
+ * or returned: policy.json declares 6 a day per parcel, which the guard the
+ * factory gives counts under "trackParcel", the tracking number named (a 7th
+ * request that day is a UsageLimitReachedException, never sent); after
+ * delivery, the caller stops. Its STAT is the parcel's status - 80 registered,
  * 81 on its way, 82 delivered, 83 an anomaly - and each step has a sentence,
  * a date and a place.
  */
@@ -32,7 +36,8 @@ final class TrackingAction implements ActionInterface, ApiAwareInterface
         '83' => TrackingStatus::EXCEPTION,
     ];
 
-    public function __construct()
+    /** @param ?PolicyGuard $parcels the policy's limits per parcel (PolicyGuard::perResource()); null: none counted here */
+    public function __construct(private readonly ?PolicyGuard $parcels = null)
     {
         $this->apiClass = Api::class;
     }
@@ -45,10 +50,11 @@ final class TrackingAction implements ActionInterface, ApiAwareInterface
     public function execute(Request $request): void
     {
         \assert($request instanceof Tracking);
-        $result = $this->api->call('WSI2_TracingColisDetaille', [
+        $track = fn (): \SimpleXMLElement => $this->api->call('WSI2_TracingColisDetaille', [
             'Expedition' => $request->trackingNumber,
             'Langue' => strtoupper(substr($request->locale, 0, 2)),
         ], array_map('strval', array_keys(self::STATUS)));
+        $result = null === $this->parcels ? $track() : $this->parcels->call('trackParcel', $track, ['resource' => $request->trackingNumber]);
 
         $status = self::STATUS[(string) $result->STAT];
         $events = [];

@@ -1,7 +1,18 @@
 {
     "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
     "provider": "mondial_relay",
-    "rateLimits": null,
+    "rateLimits": [
+        {
+            "max": 6,
+            "window": "day",
+            "scope": "resource",
+            "per": "parcel",
+            "operations": [
+                "trackParcel"
+            ],
+            "note": "Tracking: each shipment queried no more than 4 to 6 times a day (Presentation of WebServices V-1.2), the upper figure declared; never once delivered or returned, which no limit counts (the caller's, or EDI and webhooks for more). trackParcel is the tracking request (WSI2_TracingColisDetaille), counted per parcel by the provider; omnibus' gateway counts its \"tracking\" operation as before. No published request rate besides."
+        }
+    ],
     "concurrency": null,
     "rights": {
         "commercial": "contract",
@@ -33,6 +44,6 @@
         "verifiedAt": "2026-11-11",
         "declaredBy": "maintainer",
         "contact": "https://connect.mondialrelay.com",
-        "notes": "Read 2026-11-11: Presentation of WebServices V-1.2 (February 2026), Web Service (API1, SOAP) V-5.14 (January 2025, https://storage.mondialrelay.fr/web-service-solution-v514-EN.pdf), Web Service Dual Carrier (API2, REST) V-2.7.1 (June 2024). API1 is the maintained service for relay point searches and tracking; its shipment methods (WSI2_CreationExpedition, WSI2_CreationEtiquette, WSI3_GetEtiquettes) are stopped since V-5.11 (April 2024), 'no longer maintained and should not be used', blocked for the accounts created from 2024-12-23: labels go through API2. The two APIs have different credentials, both from Connect (Administration, Configuration des API): API1 the enseigne and private key, API2 a login, a password and a customer id. Calls: no batch mode, requests spread over the day as end users need them (both APIs; API2: 'No batch script will be allowed'). Tracking: each shipment queried no more than 4 to 6 times a day, never once delivered or returned (EDI or webhooks for more): a limit per parcel, which no scope of the schema counts, so not declared as a rate limit; the caller keeps it. Point search: one call per search, never the whole network, 10 to 30 points, default radius 50 km, at most 75 km (REL) or 100 km (24R, 24L). Labels: API2's labels must not be altered or resized; labels printed by the merchant's own hardware are validated by Mondial Relay first; additional labelling only with its approval. No idempotency key, and OrderNo is free data: a shipment request is sent once, and one lost after it left is looked up in Connect before booking again. No published request rate."
+        "notes": "Read 2026-11-11: Presentation of WebServices V-1.2 (February 2026), Web Service (API1, SOAP) V-5.14 (January 2025, https://storage.mondialrelay.fr/web-service-solution-v514-EN.pdf), Web Service Dual Carrier (API2, REST) V-2.7.1 (June 2024). API1 is the maintained service for relay point searches and tracking; its shipment methods (WSI2_CreationExpedition, WSI2_CreationEtiquette, WSI3_GetEtiquettes) are stopped since V-5.11 (April 2024), 'no longer maintained and should not be used', blocked for the accounts created from 2024-12-23: labels go through API2. The two APIs have different credentials, both from Connect (Administration, Configuration des API): API1 the enseigne and private key, API2 a login, a password and a customer id. Calls: no batch mode, requests spread over the day as end users need them (both APIs; API2: 'No batch script will be allowed'). Tracking: each shipment queried no more than 4 to 6 times a day, never once delivered or returned (EDI or webhooks for more): declared as 6 a day per parcel (rateLimits, omnisense/contracts' resource scope); the rule after delivery stays the caller's. Point search: one call per search, never the whole network, 10 to 30 points, default radius 50 km, at most 75 km (REL) or 100 km (24R, 24L). Labels: API2's labels must not be altered or resized; labels printed by the merchant's own hardware are validated by Mondial Relay first; additional labelling only with its approval. No idempotency key, and OrderNo is free data: a shipment request is sent once, and one lost after it left is looked up in Connect before booking again. No published request rate."
     }
 }

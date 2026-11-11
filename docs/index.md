@@ -134,8 +134,9 @@ the label's `url` `https://www.mondialrelay.com` and the `URL_Etiquette` returne
 
 **Track.** `WSI2_TracingColisDetaille` with the language taken from the locale's first two letters,
 in capitals (`fr` gives `FR`). Mondial Relay asks that a shipment be tracked no more than 4 to 6
-times a day and never once delivered or returned (EDI or webhooks for more): the caller keeps that
-count. The answer's `STAT` is the parcel's status:
+times a day and never once delivered or returned (EDI or webhooks for more): the 7th tracking
+request of a parcel in a day is a `UsageLimitReachedException`, never sent (Usage policy, below);
+stopping after delivery stays the caller's. The answer's `STAT` is the parcel's status:
 
 | `STAT` | `TrackingStatus` |
 |---|---|
@@ -262,11 +263,19 @@ The core's Docker harness calls the same gateway from its console:
 
 ## Usage policy
 
-`policy.json` (named in `composer.json`'s `extra.omnisense.policy`) leaves the request rates unknown:
-Mondial Relay publishes none. Its notes keep what the documents ask (read 2026-11-11): no batch
-calls, requests spread over the day as end users need them; a shipment tracked 4 to 6 times a day
-at most and never once delivered or returned (a limit per parcel, which no scope of the schema
-counts: not declared as a rate limit, the caller keeps it); one call per point search, never the
+`policy.json` (named in `composer.json`'s `extra.omnisense.policy`) declares one limit: a shipment
+tracked 6 times a day at most (Mondial Relay says 4 to 6), counted per parcel
+(`{"scope": "resource", "per": "parcel", "operations": ["trackParcel"]}`). `TrackingAction` counts
+it itself, the tracking number named, through the guard the factory gives it
+(`Config::guard()->perResource()`, in the registry's limiter), while the gateway's guard counts
+`tracking` as before, so a site's limit on every operation counts each request once. A site may
+lower it: `'policy' => ['rateLimits' => [['max' => 4, 'window' => 'day', 'scope' => 'resource',
+'per' => 'parcel', 'operations' => ['trackParcel']]]]`. It needs omnisense/contracts 2f78f0e or
+later; with an older one the gateway runs as before, without it (the factory reads policy.json
+without the limit, which that kernel cannot read; its `PolicyExport` reports the file unreadable).
+Mondial Relay publishes no request rate. The notes keep what the documents ask (read 2026-11-11): no batch
+calls, requests spread over the day as end users need them; never tracked once delivered or
+returned; one call per point search, never the
 whole network, 30 points at most, a radius up to 75 km (REL) or 100 km (24R, 24L); API2's labels
 not altered nor resized, a merchant's own printing validated by Mondial Relay first. See
 omnisense/omnibus' [Usage policies and rate

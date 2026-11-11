@@ -8,6 +8,8 @@ use Omnibus\MondialRelay\Action\GetSlipAction;
 use Omnibus\MondialRelay\Action\PickupAction;
 use Omnibus\MondialRelay\Action\ShippingAction;
 use Omnibus\MondialRelay\Action\TrackingAction;
+use Omnisense\Contracts\Policy\Scope;
+use Omnisense\Contracts\Policy\UsagePolicy;
 use Symfony\Component\HttpClient\HttpClient;
 
 /**
@@ -28,9 +30,17 @@ use Symfony\Component\HttpClient\HttpClient;
  *
  * No rating nor cancellation service: prices are the shop's contract, and a
  * label not handed over simply expires.
+ *
+ * Its usage policy (policy.json) counts each parcel's tracking requests apart
+ * (6 a day): TrackingAction counts them itself, under "trackParcel", the
+ * tracking number named, while the gateway's guard counts "tracking".
  */
 final class MondialRelayGatewayFactory extends GatewayFactory
 {
+    public const POLICY = __DIR__.'/policy.json';
+
+    private static ?UsagePolicy $policy = null;
+
     protected function populateConfig(Config $config): void
     {
         if ($config->get('sandbox')) {
@@ -39,7 +49,7 @@ final class MondialRelayGatewayFactory extends GatewayFactory
         $config->defaults([
             'omnibus.factory_name' => 'mondial_relay',
             'omnibus.factory_title' => 'Mondial Relay',
-            'omnibus.policy' => __DIR__.'/policy.json',
+            'omnibus.policy' => self::usagePolicy(),
             'omnibus.required_options' => ['enseigne', 'private_key'],
             'endpoint' => Api::ENDPOINT,
             'shipment_endpoint' => ShipmentApi::ENDPOINT,
@@ -58,11 +68,41 @@ final class MondialRelayGatewayFactory extends GatewayFactory
             },
             'omnibus.action.pickup' => new PickupAction(),
             'omnibus.action.shipping' => static fn (Config $c) => new ShippingAction((string) $c->string('collection'), $c->bool('download_labels'), (string) $c->string('label_format'), $c->bool('legacy_labels')),
-            'omnibus.action.tracking' => new TrackingAction(),
+            'omnibus.action.tracking' => static fn (Config $c) => new TrackingAction(self::countsPerResource() ? $c->guard(self::usagePolicy())->perResource() : null),
             // WSI3_GetEtiquettes: stopped for the accounts opened since 2024-12-23, and API2 has no reprint (a label's
             // url is its reprint). Kept where the labels still come from the SOAP service.
             'omnibus.action.get_slip' => static fn (Config $c) => self::api2($c) && !$c->bool('legacy_labels') ? null : new GetSlipAction($c->bool('download_labels')),
         ]);
+    }
+
+    /**
+     * Its usage policy, as policy.json declares it. Under an omnisense/contracts
+     * older than its resource scope (before 2f78f0e), which refuses the file's
+     * limit per parcel, the policy without it: what it declared before.
+     */
+    public static function usagePolicy(): UsagePolicy
+    {
+        return self::$policy ??= self::readPolicy();
+    }
+
+    private static function readPolicy(): UsagePolicy
+    {
+        if (self::countsPerResource()) {
+            return UsagePolicy::fromFile(self::POLICY);
+        }
+        $data = json_decode((string) file_get_contents(self::POLICY), true, 64, \JSON_THROW_ON_ERROR);
+        \assert(\is_array($data) && \is_array($data['rateLimits'] ?? null));
+        $limits = array_values(array_filter($data['rateLimits'], static fn (mixed $limit): bool => !\is_array($limit) || 'resource' !== ($limit['scope'] ?? null)));
+        $data['rateLimits'] = [] === $limits ? null : $limits;
+
+        /** @var array<string, mixed> $data */
+        return UsagePolicy::fromArray($data);
+    }
+
+    /** Whether the kernel counts limits per resource (omnisense/contracts 2f78f0e and later). */
+    private static function countsPerResource(): bool
+    {
+        return \defined(Scope::class.'::Resource');
     }
 
     /** Whether API2's three credentials are all there; one or two of them is a mistake said at once. */

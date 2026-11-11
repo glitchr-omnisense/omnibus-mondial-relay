@@ -3,6 +3,16 @@
 ## [Unreleased]
 
 ### Changed
+- Mondial Relay's tracking rule declared as a limit: 6 tracking requests a day per parcel
+  (`policy.json`: `"scope": "resource"`, `"per": "parcel"`, operation `trackParcel`), where the
+  notes said no scope could count it. `TrackingAction` counts each request under `trackParcel`, the
+  tracking number named, through the guard the factory gives it (`Config::guard()->perResource()`),
+  in the same limiter as the gateway's guard; the 7th request of a parcel in a day is a
+  `UsageLimitReachedException`, never sent. `MondialRelayGatewayFactory::usagePolicy()`, `POLICY`.
+  Needs omnisense/contracts **2f78f0e** (the resource scope, `PolicyGuard::perResource()`); with an
+  older kernel (1568f2c) the factory reads policy.json without that limit and nothing is counted
+  per parcel, as before; only that kernel's `PolicyExport` reports the file as unreadable.
+  Tests/ParcelTrackingLimitTest.
 - Labels go through Mondial Relay's API2, the dual carrier shipment API (`ShipmentApi`: one
   `ShipmentCreationRequest` POSTed to `connect-api.mondialrelay.com/api/shipment`, the sandbox's
   with `sandbox`). The SOAP `WSI2_CreationEtiquette` the package used is stopped ("no longer
