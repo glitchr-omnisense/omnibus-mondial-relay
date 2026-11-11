@@ -3,6 +3,7 @@
 namespace Omnibus\MondialRelay\Tests;
 
 use Omnibus\MondialRelay\Api;
+use Omnibus\MondialRelay\ShipmentApi;
 use Omnibus\Exception\CarrierException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -17,7 +18,7 @@ use Symfony\Component\HttpClient\Response\MockResponse;
  */
 final class UnreachableChainTest extends TestCase
 {
-    private const SECRETS = ['mondial-private-key-4e9b20'];
+    private const SECRETS = ['mondial-private-key-4e9b20', 'api2-password-7c1d55'];
 
     private string|false $ignoreArgs = false;
 
@@ -35,6 +36,7 @@ final class UnreachableChainTest extends TestCase
     public static function calls(): iterable
     {
         yield 'points' => [static fn (Api $api): mixed => $api->call('WSI4_PointRelais_Recherche', ['Pays' => 'FR', 'CP' => '75002'])];
+        yield 'shipment (API2)' => [static fn (Api $api): mixed => $api->shipments()?->create('<Shipment />', 'PdfUrl', '10x15')];
         yield 'download' => [static fn (Api $api): mixed => $api->download('https://www.mondialrelay.com/ww2/PDF/StickerMaker2.aspx?ens=BDTEST13&crc=ABC')];
     }
 
@@ -54,7 +56,8 @@ final class UnreachableChainTest extends TestCase
 
     private static function assertClean(\Closure $call, \Closure $responses): void
     {
-        $api = new Api(new MockHttpClient($responses), 'BDTEST13', 'mondial-private-key-4e9b20');
+        $http = new MockHttpClient($responses);
+        $api = new Api($http, 'BDTEST13', 'mondial-private-key-4e9b20', shipments: new ShipmentApi($http, 'login@example.com', 'api2-password-7c1d55', 'BDTEST13'));
         try {
             $call($api);
             self::fail('no exception');

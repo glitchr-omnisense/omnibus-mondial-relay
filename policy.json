@@ -28,11 +28,11 @@
         }
     },
     "provenance": {
-        "terms": null,
+        "terms": "https://storage.mondialrelay.fr/web-service-dual-carrier-v-271.pdf",
         "policy": "https://storage.mondialrelay.fr/Presentation of WebServices V1.2-1.pdf",
-        "verifiedAt": "2026-11-10",
+        "verifiedAt": "2026-11-11",
         "declaredBy": "maintainer",
         "contact": "https://connect.mondialrelay.com",
-        "notes": "Presentation of WebServices V1.2 (February 2026): no batch calls, requests spread over the day as end users need them; a shipment tracked 4 to 6 times a day at most and no more once delivered or returned (per parcel: no scope of the schema counts it, so not declared); one call per point search, never the whole network, 30 points at most, radius up to 75 km (100 km for 24R/24L). The SOAP shipment creation (WSI2_CreationEtiquette, which this package calls) is \"no longer maintained and should not be used\": labels go through API2 (REST); API2 labels must not be altered or resized. Access with the merchant's enseigne and private key. No idempotency key: a label is created once."
+        "notes": "Read 2026-11-11: Presentation of WebServices V-1.2 (February 2026), Web Service (API1, SOAP) V-5.14 (January 2025, https://storage.mondialrelay.fr/web-service-solution-v514-EN.pdf), Web Service Dual Carrier (API2, REST) V-2.7.1 (June 2024). API1 is the maintained service for relay point searches and tracking; its shipment methods (WSI2_CreationExpedition, WSI2_CreationEtiquette, WSI3_GetEtiquettes) are stopped since V-5.11 (April 2024), 'no longer maintained and should not be used', blocked for the accounts created from 2024-12-23: labels go through API2. The two APIs have different credentials, both from Connect (Administration, Configuration des API): API1 the enseigne and private key, API2 a login, a password and a customer id. Calls: no batch mode, requests spread over the day as end users need them (both APIs; API2: 'No batch script will be allowed'). Tracking: each shipment queried no more than 4 to 6 times a day, never once delivered or returned (EDI or webhooks for more): a limit per parcel, which no scope of the schema counts, so not declared as a rate limit; the caller keeps it. Point search: one call per search, never the whole network, 10 to 30 points, default radius 50 km, at most 75 km (REL) or 100 km (24R, 24L). Labels: API2's labels must not be altered or resized; labels printed by the merchant's own hardware are validated by Mondial Relay first; additional labelling only with its approval. No idempotency key, and OrderNo is free data: a shipment request is sent once, and one lost after it left is looked up in Connect before booking again. No published request rate."
     }
 }

@@ -10,10 +10,13 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
- * Mondial Relay's web services (SOAP 1.1, Web_Services.asmx), spoken over
- * plain HTTP: every call is its parameters in the documented order, signed
- * with Security = MD5(the values one after the other + the private key),
- * in capitals.
+ * Mondial Relay's API1, the SOAP web services (SOAP 1.1, Web_Services.asmx),
+ * spoken over plain HTTP: every call is its parameters in the documented
+ * order, signed with Security = MD5(the values one after the other + the
+ * private key), in capitals. API1 is the maintained service for the relay
+ * point search and tracking; its shipment and label methods are stopped
+ * (Web Service V-5.11, April 2024): labels go through API2 (ShipmentApi),
+ * reached from here by shipments().
  */
 final class Api
 {
@@ -23,40 +26,87 @@ final class Api
 
     /**
      * Mondial Relay's public test brand: works on the live endpoint, books
-     * nothing. Published by Mondial Relay in its integration documentation,
-     * the same for everyone: test identifiers, not a secret.
+     * nothing. Published by Mondial Relay in its integration documentation
+     * (Web Service V-5.14, January 2025: "Test credentials"; the key changed
+     * from PrivateK in V-5.12, September 2024), the same for everyone: test
+     * identifiers, not a secret.
      */
     public const TEST_ENSEIGNE = 'BDTEST13';
-    public const TEST_PRIVATE_KEY = 'PrivateK';
+    public const TEST_PRIVATE_KEY = 'TestAPI1key';
 
-    /** The STAT codes worth a sentence; the rest are numbered in the documentation. */
+    /** The STAT codes, as Web Service V-5.14 (January 2025) words them; 80 to 83 are tracking statuses. */
     private const ERRORS = [
-        '1' => 'Enseigne invalide',
-        '2' => "Numéro d'enseigne vide ou inexistant",
-        '8' => 'Mot de passe ou hachage invalide',
-        '9' => 'Ville non reconnue ou non unique',
-        '10' => 'Type de collecte invalide',
-        '12' => 'Type de livraison invalide',
-        '20' => 'Poids du colis invalide',
-        '24' => "Numéro d'expédition ou de suivi invalide",
-        '30' => 'Adresse (L1) invalide',
-        '35' => 'Code postal invalide',
-        '40' => 'Pays invalide',
-        '44' => 'Point relais de livraison invalide',
-        '94' => 'Colis inexistant',
-        '95' => 'Compte enseigne non activé',
-        '97' => 'Clé de sécurité invalide',
-        '99' => 'Erreur générique du service',
+        '1' => 'Incorrect merchant',
+        '2' => 'Merchant number empty',
+        '3' => 'Incorrect merchant account number',
+        '5' => 'Incorrect merchant shipment reference',
+        '7' => 'Incorrect consignee reference',
+        '8' => 'Incorrect password or hash',
+        '9' => 'Unknown or not unique city',
+        '10' => 'Incorrect type of collection',
+        '11' => 'Incorrect collection Point Relais number',
+        '12' => 'Incorrect collection Point Relais country',
+        '13' => 'Incorrect type of delivery',
+        '14' => 'Incorrect delivery Point Relais number',
+        '15' => 'Incorrect delivery Point Relais country',
+        '16' => 'Incorrect country code',
+        '17' => 'Incorrect address',
+        '18' => 'Incorrect city',
+        '19' => 'Incorrect postal code',
+        '20' => 'Incorrect parcel weight',
+        '21' => 'Incorrect developed length (length + height)',
+        '22' => 'Incorrect parcel size',
+        '24' => 'Incorrect shipment number',
+        '25' => 'Insufficient account credit',
+        '27' => 'Incorrect mode of collection or delivery',
+        '28' => 'Incorrect mode of collection',
+        '29' => 'Incorrect mode of delivery',
+        '30' => 'Incorrect address (L1)',
+        '31' => 'Incorrect address (L2)',
+        '33' => 'Incorrect address (L3)',
+        '34' => 'Incorrect address (L4)',
+        '35' => 'Incorrect city',
+        '36' => 'Incorrect zipcode',
+        '37' => 'Incorrect country',
+        '38' => 'Incorrect phone number',
+        '39' => 'Incorrect e-mail',
+        '40' => 'Missing parameters',
+        '47' => 'Incorrect number of parcels',
+        '48' => 'Multi-parcel not permitted at Point Relais',
+        '49' => 'Incorrect action',
+        '63' => 'Incorrect insurance',
+        '67' => 'Incorrect latitude',
+        '68' => 'Incorrect longitude',
+        '69' => 'Incorrect merchant code',
+        '70' => 'Incorrect Point Relais number',
+        '74' => 'Incorrect language',
+        '78' => 'Incorrect country of collection',
+        '79' => 'Incorrect country of delivery',
+        '91' => 'PUDO nature not allowed for the account',
+        '92' => "The Point Relais country code and the consignee's country code are different, or insufficient funds",
+        '93' => 'No information given by the sorting plan',
+        '94' => 'Unknown parcel',
+        '95' => 'Merchant account not activated',
+        '97' => 'Incorrect security key',
+        '98' => 'Generic error (incorrect parameters)',
+        '99' => 'Generic error of service system',
     ];
 
     public function __construct(
         private readonly HttpClientInterface $http,
         private readonly string $enseigne,
-        private readonly string $privateKey,
+        #[\SensitiveParameter] private readonly string $privateKey,
         private readonly string $endpoint = self::ENDPOINT,
         /** The waits the carrier asks for (omnisense/contracts' Backoff): no call while one lasts, a 429 a RateLimitedException, never retried */
         private readonly ?Backoff $backoff = null,
+        /** API2, for labels: null when its credentials (login, password, customer_id) are not configured */
+        private readonly ?ShipmentApi $shipments = null,
     ) {
+    }
+
+    public function shipments(): ?ShipmentApi
+    {
+        return $this->shipments;
     }
 
     public function enseigne(): string

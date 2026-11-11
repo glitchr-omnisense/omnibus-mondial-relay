@@ -1,7 +1,7 @@
 {
     "name": "omnibus/mondial-relay",
     "type": "library",
-    "description": "Omnibus Mondial Relay carrier: relay points, labels, tracking (Web_Services.asmx, no ext-soap needed).",
+    "description": "Omnibus Mondial Relay carrier: relay points and tracking (API1, Web_Services.asmx, no ext-soap needed), labels (API2, the dual carrier shipment API).",
     "keywords": [
         "shipping",
         "omnibus",

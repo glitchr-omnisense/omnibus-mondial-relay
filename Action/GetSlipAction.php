@@ -10,7 +10,14 @@ use Omnibus\Request\GetSlip;
 use Omnibus\Request\Request;
 use Omnibus\MondialRelay\Api;
 
-/** WSI3_GetEtiquettes: a booked label again, 10x15 (thermal printers), else A4. */
+/**
+ * WSI3_GetEtiquettes: a booked label again, 10x15 (thermal printers), else A4.
+ * Deprecated with the SOAP labels: Mondial Relay stopped it (Web Service
+ * V-5.11, April 2024) for the accounts opened since 2024-12-23, and API2 has
+ * no reprint. The gateway offers it only while labels come from the SOAP
+ * service (no API2 credentials, or legacy_labels); an API2 label's url is
+ * where it is printed again.
+ */
 final class GetSlipAction implements ActionInterface, ApiAwareInterface
 {
     /** @use ApiAwareTrait<Api> */

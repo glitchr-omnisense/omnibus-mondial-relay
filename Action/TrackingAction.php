@@ -13,7 +13,10 @@ use Omnibus\Request\Tracking;
 use Omnibus\MondialRelay\Api;
 
 /**
- * WSI2_TracingColisDetaille. Its STAT is the parcel's status - 80 registered,
+ * WSI2_TracingColisDetaille (API1, still the maintained tracking service:
+ * Presentation of WebServices V-1.2, February 2026). Mondial Relay asks that a
+ * shipment be tracked 4 to 6 times a day at most, and no more once delivered
+ * or returned: the caller's to keep (no limiter counts per parcel). Its STAT is the parcel's status - 80 registered,
  * 81 on its way, 82 delivered, 83 an anomaly - and each step has a sentence,
  * a date and a place.
  */

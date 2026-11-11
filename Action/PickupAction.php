@@ -14,7 +14,9 @@ use Omnibus\MondialRelay\Api;
 /**
  * WSI4_PointRelais_Recherche: the relay points around a postcode, nearest
  * first, that take the parcel's weight. A point's id is "<country>-<number>"
- * (FR-066974): what ShippingAction books to.
+ * (FR-066974): what ShippingAction books to. API1's search is still the
+ * maintained one (Presentation of WebServices V-1.2, February 2026): one call
+ * per search, never the whole network, 30 points at most.
  */
 final class PickupAction implements ActionInterface, ApiAwareInterface
 {
