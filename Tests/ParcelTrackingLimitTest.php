@@ -6,7 +6,6 @@ use Omnibus\Exception\UsageLimitReachedException;
 use Omnibus\MondialRelay\MondialRelayGatewayFactory;
 use Omnibus\Registry;
 use Omnisense\Contracts\Policy\InMemoryRateLimiter;
-use Omnisense\Contracts\Policy\Scope;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -20,13 +19,6 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 final class ParcelTrackingLimitTest extends TestCase
 {
     private int $sent = 0;
-
-    protected function setUp(): void
-    {
-        if (!\defined(Scope::class.'::Resource')) {
-            self::markTestSkipped('omnisense/contracts before 2f78f0e counts no limit per resource.');
-        }
-    }
 
     public function testTheSeventhTrackingOfAParcelInADayIsNeverSent(): void
     {

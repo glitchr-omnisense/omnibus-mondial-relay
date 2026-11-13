@@ -4,6 +4,42 @@ Mondial Relay for [omnisense/omnibus](https://github.com/glitchr-omnisense/omnib
 and tracking through API1, its SOAP web services (`Web_Services.asmx`, plain HTTP, no ext-soap
 needed), and labels through API2, the "dual carrier" shipment API (REST, XML).
 
+## Install and a first call
+
+```sh
+composer require omnibus/mondial-relay
+```
+
+No account for this first call: Mondial Relay's answer is recorded
+(`Omnibus\Testing\RecordedHttpClient` answers in place of the API), so nothing leaves the process.
+With your own credentials, give the factory your HTTP client (or none: it makes its own) and drop
+the recorded one.
+
+```php
+<?php
+
+require __DIR__.'/vendor/autoload.php';
+
+use Omnibus\MondialRelay\MondialRelayGatewayFactory;
+use Omnibus\Testing\RecordedHttpClient;
+
+// Mondial Relay's answer, recorded: no account, and nothing leaves the process.
+$http = new RecordedHttpClient([
+    'body:WSI2_TracingColisDetaille' => '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><WSI2_TracingColisDetailleResponse xmlns="http://www.mondialrelay.fr/webservice/">'
+        .'<WSI2_TracingColisDetailleResult><STAT>82</STAT><Tracing><ret_WSI2_sub_TracingColisDetaille><Libelle>COLIS LIVRE</Libelle><Date>03/10/2026</Date><Heure>09:12</Heure>'
+        .'<Emplacement>PARIS</Emplacement></ret_WSI2_sub_TracingColisDetaille></Tracing></WSI2_TracingColisDetailleResult></WSI2_TracingColisDetailleResponse></soap:Body></soap:Envelope>',
+]);
+$gateway = (new MondialRelayGatewayFactory($http))->create(['enseigne' => 'BDTEST13', 'private_key' => 'TestAPI1key']);
+
+$tracking = $gateway->track('31231652');
+echo $tracking->status->value, ' - ', $tracking->latest()?->description, "\n";   // delivered - COLIS LIVRE
+```
+
+A real call needs a Mondial Relay account (API1 brand and private key; API2 login, password and
+customer id for labels: below). No live call was made: see "Verified, and not".
+
+## Configuration
+
 ```php
 $gateway = (new MondialRelayGatewayFactory($http))->create($options);   // $http: the HTTP client to call with (the application's, HttpClient::create() in plain PHP); the options below
 ```

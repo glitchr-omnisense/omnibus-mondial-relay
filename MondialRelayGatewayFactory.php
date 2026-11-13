@@ -8,7 +8,6 @@ use Omnibus\MondialRelay\Action\GetSlipAction;
 use Omnibus\MondialRelay\Action\PickupAction;
 use Omnibus\MondialRelay\Action\ShippingAction;
 use Omnibus\MondialRelay\Action\TrackingAction;
-use Omnisense\Contracts\Policy\Scope;
 use Omnisense\Contracts\Policy\UsagePolicy;
 use Symfony\Component\HttpClient\HttpClient;
 
@@ -68,41 +67,17 @@ final class MondialRelayGatewayFactory extends GatewayFactory
             },
             'omnibus.action.pickup' => new PickupAction(),
             'omnibus.action.shipping' => static fn (Config $c) => new ShippingAction((string) $c->string('collection'), $c->bool('download_labels'), (string) $c->string('label_format'), $c->bool('legacy_labels')),
-            'omnibus.action.tracking' => static fn (Config $c) => new TrackingAction(self::countsPerResource() ? $c->guard(self::usagePolicy())->perResource() : null),
+            'omnibus.action.tracking' => static fn (Config $c) => new TrackingAction($c->guard(self::usagePolicy())->perResource()),
             // WSI3_GetEtiquettes: stopped for the accounts opened since 2024-12-23, and API2 has no reprint (a label's
             // url is its reprint). Kept where the labels still come from the SOAP service.
             'omnibus.action.get_slip' => static fn (Config $c) => self::api2($c) && !$c->bool('legacy_labels') ? null : new GetSlipAction($c->bool('download_labels')),
         ]);
     }
 
-    /**
-     * Its usage policy, as policy.json declares it. Under an omnisense/contracts
-     * older than its resource scope (before 2f78f0e), which refuses the file's
-     * limit per parcel, the policy without it: what it declared before.
-     */
+    /** Its usage policy, as policy.json declares it (the limit per parcel included). */
     public static function usagePolicy(): UsagePolicy
     {
-        return self::$policy ??= self::readPolicy();
-    }
-
-    private static function readPolicy(): UsagePolicy
-    {
-        if (self::countsPerResource()) {
-            return UsagePolicy::fromFile(self::POLICY);
-        }
-        $data = json_decode((string) file_get_contents(self::POLICY), true, 64, \JSON_THROW_ON_ERROR);
-        \assert(\is_array($data) && \is_array($data['rateLimits'] ?? null));
-        $limits = array_values(array_filter($data['rateLimits'], static fn (mixed $limit): bool => !\is_array($limit) || 'resource' !== ($limit['scope'] ?? null)));
-        $data['rateLimits'] = [] === $limits ? null : $limits;
-
-        /** @var array<string, mixed> $data */
-        return UsagePolicy::fromArray($data);
-    }
-
-    /** Whether the kernel counts limits per resource (omnisense/contracts 2f78f0e and later). */
-    private static function countsPerResource(): bool
-    {
-        return \defined(Scope::class.'::Resource');
+        return self::$policy ??= UsagePolicy::fromFile(self::POLICY);
     }
 
     /** Whether API2's three credentials are all there; one or two of them is a mistake said at once. */

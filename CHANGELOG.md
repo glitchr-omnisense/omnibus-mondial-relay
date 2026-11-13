@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-13
+
+The first stable 2.x release: it installs with Composer's default minimum-stability (stable).
+
+### Release
+- Requires `omnisense/contracts` `^1.0` and `omnisense/omnibus` `^2.0`, stable versions, where it
+  required `@dev` ones; `extra.branch-alias` `dev-2.x` → `2.x-dev`.
+- CI: `.github/workflows/ci.yml` (glitchr-studio/ci's php-package.yml: the package installed alone,
+  PHPUnit, PHPStan against its baseline, a consumer install) and `release.yml` (that CI on the tag,
+  then glitchr-studio/ci's php-release.yml); `phpunit.xml.dist` runs the package's own tests.
+- The fallback for an omnisense/contracts older than 2f78f0e is gone: the policy is policy.json as it
+  is, the limit per parcel always counted (contracts 1.0 has the resource scope);
+  `Tests/ParcelTrackingLimitTest` is no longer skipped on an older kernel.
+- README: the install line and a first call on a recorded answer (no account, nothing sent).
+
 ### Changed
 - Mondial Relay's tracking rule declared as a limit: 6 tracking requests a day per parcel
   (`policy.json`: `"scope": "resource"`, `"per": "parcel"`, operation `trackParcel`), where the
@@ -9,9 +24,7 @@
   tracking number named, through the guard the factory gives it (`Config::guard()->perResource()`),
   in the same limiter as the gateway's guard; the 7th request of a parcel in a day is a
   `UsageLimitReachedException`, never sent. `MondialRelayGatewayFactory::usagePolicy()`, `POLICY`.
-  Needs omnisense/contracts **2f78f0e** (the resource scope, `PolicyGuard::perResource()`); with an
-  older kernel (1568f2c) the factory reads policy.json without that limit and nothing is counted
-  per parcel, as before; only that kernel's `PolicyExport` reports the file as unreadable.
+  On omnisense/contracts' resource scope (`PolicyGuard::perResource()`).
   Tests/ParcelTrackingLimitTest.
 - Labels go through Mondial Relay's API2, the dual carrier shipment API (`ShipmentApi`: one
   `ShipmentCreationRequest` POSTed to `connect-api.mondialrelay.com/api/shipment`, the sandbox's
